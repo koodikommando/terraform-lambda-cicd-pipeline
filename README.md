@@ -1,5 +1,17 @@
 # password-generator-lambda
 
+## What I'm learning
+
+This project is my hands-on introduction to AWS and infrastructure-as-code. 
+I'm building a small serverless app end-to-end to learn:
+- Deploying to AWS Lambda + API Gateway
+- Managing infrastructure with Terraform (including remote state via S3 + DynamoDB)
+- Setting up CI/CD with GitHub Actions
+- Authenticating GitHub to AWS via OIDC instead of long-lived access keys
+
+The core password-generation logic below is done. The Lambda handler, 
+Terraform config, and CI/CD pipeline are next.
+
 A cryptographically secure password generator, written in TypeScript. This is the core logic for a Lambda function I'm building as a learning exercise (handler, infrastructure, and CI/CD to be added separately).
 
 ## `generatePassword`
