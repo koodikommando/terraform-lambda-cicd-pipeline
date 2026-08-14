@@ -84,6 +84,16 @@ resource "aws_cloudwatch_log_group" "password_generator" {
 resource "aws_apigatewayv2_api" "password_generator" {
   name          = "password-generator-api"
   protocol_type = "HTTP"
+
+    cors_configuration {
+    allow_origins = [
+      "https://ollikoodaa.com",
+      "https://www.ollikoodaa.com",
+      "http://localhost:3000"
+    ]
+    allow_methods = ["GET"]
+    allow_headers = ["content-type"]
+  }
 }
 
 resource "aws_apigatewayv2_stage" "password_generator" {
@@ -154,3 +164,4 @@ terraform {
     encrypt        = true
   }
 }
+
