@@ -2,17 +2,14 @@
 
 ## What I'm learning
 
-This project is my hands-on introduction to AWS and infrastructure-as-code. 
+This project is my hands-on introduction to AWS and infrastructure-as-code.
 I'm building a small serverless app end-to-end to learn:
 - Deploying to AWS Lambda + API Gateway
 - Managing infrastructure with Terraform (including remote state via S3 + DynamoDB)
 - Setting up CI/CD with GitHub Actions
 - Authenticating GitHub to AWS via OIDC instead of long-lived access keys
 
-The core password-generation logic below is done. The Lambda handler, 
-Terraform config, and CI/CD pipeline are next.
-
-A cryptographically secure password generator, written in TypeScript. This is the core logic for a Lambda function I'm building as a learning exercise (handler, infrastructure, and CI/CD to be added separately).
+A cryptographically secure password generator, written in TypeScript, deployed to AWS Lambda behind API Gateway with hand-written Terraform. Built as a learning exercise covering the full path from pure logic to a live, provisioned endpoint (CI/CD still to come).
 
 ## `generatePassword`
 
@@ -58,11 +55,30 @@ npm run build
 
 ## Lambda Handler
 
-_TODO_
+`src/handler.ts` wraps `generatePassword` for API Gateway HTTP API. It parses the incoming query string parameters (`length`, `symbols`, `numbers`, `uppercase`, `lowercase`) into a `GeneratePasswordOptions` object, calls `generatePassword`, and returns a proper API Gateway response: `200` with `{ "password": "..." }` on success, or `400` with `{ "error": "..." }` if the options are invalid.
 
 ## Infrastructure
 
-_TODO_
+Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `output.tf`):
+
+- IAM role + policy attachment for the Lambda
+- S3 bucket (random ID suffix) storing the packaged Lambda deployment zip
+- Lambda function (Node.js 20 runtime)
+- API Gateway HTTP API with a `GET /` route and `$default` auto-deploy stage
+- CloudWatch log group
+- Lambda permission allowing API Gateway to invoke the function
+
+Deployed via `terraform apply` from a local machine. State is currently local (`terraform.tfstate`); a remote backend (S3 + DynamoDB for locking) is planned but not yet implemented.
+
+The API is live:
+
+```sh
+curl "https://id6sqlo52c.execute-api.eu-north-1.amazonaws.com/?length=20"
+```
+
+```json
+{"password":"wT2tyNnz]LBcf}%KN[wk"}
+```
 
 ## CI/CD
 
