@@ -19,12 +19,12 @@ resource "aws_iam_role" "github_actions" {
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
-        StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:koodikommando/terraform-lambda-cicd-pipeline:*"
-        }
-      }
+      StringLike = {
+        "token.actions.githubusercontent.com:sub" = "repo:koodikommando@122229021/terraform-lambda-cicd-pipeline@1333561958:*"
+    }
+    }
     }]
   })
 }
