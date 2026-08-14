@@ -19,6 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug OIDC token
+  uses: github/actions-oidc-debugger@main
+  with:
+    audience: sts.amazonaws.com
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
