@@ -139,3 +139,13 @@ resource "aws_lambda_permission" "api_gw" {
 
   source_arn = "${aws_apigatewayv2_api.password_generator.execution_arn}/*/*"
 }
+
+terraform {
+  backend "s3" {
+    bucket         = "password-generator-tfstate-repa2026"
+    key            = "terraform.tfstate"
+    region         = "eu-north-1"
+    dynamodb_table = "password-generator-tf-lock"
+    encrypt        = true
+  }
+}

@@ -9,7 +9,7 @@ I'm building a small serverless app end-to-end to learn:
 - Setting up CI/CD with GitHub Actions
 - Authenticating GitHub to AWS via OIDC instead of long-lived access keys
 
-A cryptographically secure password generator, written in TypeScript, deployed to AWS Lambda behind API Gateway with hand-written Terraform. Built as a learning exercise covering the full path from pure logic to a live, provisioned endpoint (CI/CD still to come).
+A cryptographically secure password generator, written in TypeScript, deployed to AWS Lambda behind API Gateway with hand-written Terraform and deployed via a GitHub Actions CI/CD pipeline. Built as a learning exercise covering the full path from pure logic to a live, automatically deployed endpoint.
 
 ## `generatePassword`
 
@@ -67,9 +67,9 @@ Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `o
 - API Gateway HTTP API with a `GET /` route and `$default` auto-deploy stage
 - CloudWatch log group
 - Lambda permission allowing API Gateway to invoke the function
-- GitHub OIDC provider + an IAM role scoped to this repo, so GitHub Actions can assume AWS credentials without long-lived access keys
+- GitHub OIDC provider + an IAM role (`oidc.tf`), scoped to this repo, so GitHub Actions can assume AWS credentials without long-lived access keys
 
-Deployed via `terraform apply` from a local machine. State is currently local (`terraform.tfstate`); a remote backend (S3 + DynamoDB for locking) is planned but not yet implemented.
+State is remote: an S3 bucket + DynamoDB table (for locking) were provisioned by hand via the AWS CLI, deliberately outside Terraform — Terraform can't manage the backend that stores its own state, so this is bootstrapped once and referenced via a `backend "s3" {}` block in `main.tf`. State was migrated from local to remote with `terraform init -migrate-state`.
 
 The API is live:
 
@@ -83,6 +83,8 @@ curl "https://id6sqlo52c.execute-api.eu-north-1.amazonaws.com/?length=20"
 
 ## CI/CD
 
-The AWS-side trust (OIDC provider + IAM role, see above) is in place so GitHub Actions can authenticate to AWS, but the actual workflow — running tests, packaging the Lambda, and running `terraform apply` on push — hasn't been written yet.
+A GitHub Actions workflow at `.github/workflows/deploy.yml` runs on every push and pull request to `main`: it builds the TypeScript app (`npm ci` + `npm run build`), authenticates to AWS via OIDC (no stored credentials), and runs `terraform init` + `terraform plan`. On pushes to `main`, it also runs `terraform apply`, deploying automatically.
 
-_TODO_
+Getting OIDC working required actual debugging: GitHub Actions currently sends the `sub` claim in an immutable org-ID/repo-ID format (e.g. `repo:org@12345/repo@67890:*`) rather than the plain-name format most tutorials show. Diagnosed by inspecting the actual `AssumeRoleWithWebIdentity` claim via AWS CloudTrail, then fixing the IAM role's trust policy condition to match.
+
+Still missing: no automated tests run in CI yet — `npm test` isn't part of the workflow, so `terraform apply` on `main` isn't gated on the test suite passing.
