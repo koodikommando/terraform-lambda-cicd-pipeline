@@ -59,7 +59,7 @@ npm run build
 
 ## Infrastructure
 
-Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `output.tf`):
+Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `output.tf`, `oidc.tf`):
 
 - IAM role + policy attachment for the Lambda
 - S3 bucket (random ID suffix) storing the packaged Lambda deployment zip
@@ -67,6 +67,7 @@ Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `o
 - API Gateway HTTP API with a `GET /` route and `$default` auto-deploy stage
 - CloudWatch log group
 - Lambda permission allowing API Gateway to invoke the function
+- GitHub OIDC provider + an IAM role scoped to this repo, so GitHub Actions can assume AWS credentials without long-lived access keys
 
 Deployed via `terraform apply` from a local machine. State is currently local (`terraform.tfstate`); a remote backend (S3 + DynamoDB for locking) is planned but not yet implemented.
 
@@ -81,5 +82,7 @@ curl "https://id6sqlo52c.execute-api.eu-north-1.amazonaws.com/?length=20"
 ```
 
 ## CI/CD
+
+The AWS-side trust (OIDC provider + IAM role, see above) is in place so GitHub Actions can authenticate to AWS, but the actual workflow — running tests, packaging the Lambda, and running `terraform apply` on push — hasn't been written yet.
 
 _TODO_
