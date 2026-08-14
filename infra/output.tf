@@ -12,3 +12,8 @@ output "lambda_bucket_name" {
   description = "S3 bucket storing the Lambda deployment package"
   value       = aws_s3_bucket.lambda_bucket.id
 }
+
+output "github_actions_role_arn" {
+  description = "ARN of the IAM role GitHub Actions assumes via OIDC"
+  value       = aws_iam_role.github_actions.arn
+}
