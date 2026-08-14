@@ -108,6 +108,11 @@ resource "aws_apigatewayv2_stage" "password_generator" {
       integrationErrorMessage    = "$context.integrationErrorMessage"
     })
   }
+
+  default_route_settings {
+    throttling_rate_limit  = 5
+    throttling_burst_limit = 10
+  }
 }
 
 resource "aws_apigatewayv2_integration" "password_generator" {

@@ -31,6 +31,10 @@ jobs:
         working-directory: .
         run: npm run build
 
+      - name: Test
+        working-directory: .
+        run: npm test
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}

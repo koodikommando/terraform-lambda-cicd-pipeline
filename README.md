@@ -11,6 +11,16 @@ I'm building a small serverless app end-to-end to learn:
 
 A cryptographically secure password generator, written in TypeScript, deployed to AWS Lambda behind API Gateway with hand-written Terraform and deployed via a GitHub Actions CI/CD pipeline. Built as a learning exercise covering the full path from pure logic to a live, automatically deployed endpoint.
 
+The API is live:
+
+```sh
+curl "https://id6sqlo52c.execute-api.eu-north-1.amazonaws.com/?length=20"
+```
+
+```json
+{"password":"wT2tyNnz]LBcf}%KN[wk"}
+```
+
 ## `generatePassword`
 
 `src/generatePassword.ts` exports a pure function:
@@ -64,27 +74,15 @@ Provisioned by hand-written Terraform in `infra/` (`main.tf`, `variables.tf`, `o
 - IAM role + policy attachment for the Lambda
 - S3 bucket (random ID suffix) storing the packaged Lambda deployment zip
 - Lambda function (Node.js 20 runtime)
-- API Gateway HTTP API with a `GET /` route and `$default` auto-deploy stage
+- API Gateway HTTP API with a `GET /` route and `$default` auto-deploy stage, throttled to 5 requests/sec (burst 10) to guard against abuse since the endpoint has no authentication
 - CloudWatch log group
 - Lambda permission allowing API Gateway to invoke the function
 - GitHub OIDC provider + an IAM role (`oidc.tf`), scoped to this repo, so GitHub Actions can assume AWS credentials without long-lived access keys
 
 State is remote: an S3 bucket + DynamoDB table (for locking) were provisioned by hand via the AWS CLI, deliberately outside Terraform — Terraform can't manage the backend that stores its own state, so this is bootstrapped once and referenced via a `backend "s3" {}` block in `main.tf`. State was migrated from local to remote with `terraform init -migrate-state`.
 
-The API is live:
-
-```sh
-curl "https://id6sqlo52c.execute-api.eu-north-1.amazonaws.com/?length=20"
-```
-
-```json
-{"password":"wT2tyNnz]LBcf}%KN[wk"}
-```
-
 ## CI/CD
 
-A GitHub Actions workflow at `.github/workflows/deploy.yml` runs on every push and pull request to `main`: it builds the TypeScript app (`npm ci` + `npm run build`), authenticates to AWS via OIDC (no stored credentials), and runs `terraform init` + `terraform plan`. On pushes to `main`, it also runs `terraform apply`, deploying automatically.
+A GitHub Actions workflow at `.github/workflows/deploy.yml` runs on every push and pull request to `main`: it builds the TypeScript app (`npm ci` + `npm run build`), runs the test suite (`npm test`), authenticates to AWS via OIDC (no stored credentials), and runs `terraform init` + `terraform plan`. On pushes to `main`, it also runs `terraform apply`, deploying automatically. Since tests run before the AWS/Terraform steps, a failing test blocks deployment — `terraform apply` is gated on the test suite passing.
 
 Getting OIDC working required actual debugging: GitHub Actions currently sends the `sub` claim in an immutable org-ID/repo-ID format (e.g. `repo:org@12345/repo@67890:*`) rather than the plain-name format most tutorials show. Diagnosed by inspecting the actual `AssumeRoleWithWebIdentity` claim via AWS CloudTrail, then fixing the IAM role's trust policy condition to match.
-
-Still missing: no automated tests run in CI yet — `npm test` isn't part of the workflow, so `terraform apply` on `main` isn't gated on the test suite passing.
